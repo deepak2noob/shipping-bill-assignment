@@ -1,13 +1,32 @@
-import { getDemoData } from './demo-store'
-import { Branch, Business, Exporter, loadingPorts, PortOption, ports } from './model'
+import { getDemoData, saveBranch, saveBusiness, saveExporter } from './demo-store'
+import { mockRequest } from './mock-request'
+import { Branch, Business, Exporter, PortOption } from './model'
+import { loadingPorts, ports } from './reference-fixtures'
 
-const MOCK_DELAY_MS = 250
-
-function delay<T>(value: T, ms = MOCK_DELAY_MS): Promise<T> {
-  return new Promise((resolve) => setTimeout(() => resolve(value), ms))
+function delay<T>(value: T, _?: number): Promise<T> {
+  return mockRequest(
+    () => value,
+    () => (Array.isArray(value) ? [] : value) as T
+  )
 }
 
 export const partyMockService = {
+  saveExporter: (...args: Parameters<typeof saveExporter>) => mockRequest(() => saveExporter(...args)),
+  saveBusiness: (...args: Parameters<typeof saveBusiness>) => mockRequest(() => saveBusiness(...args)),
+  saveBranch: (...args: Parameters<typeof saveBranch>) =>
+    mockRequest(() => {
+      const owners = args[0] === 'exporter' ? getDemoData().exporters : getDemoData().businesses
+      if (!owners.some((owner) => owner.id === args[1])) throw new Error('Party no longer exists.')
+      return saveBranch(...args)
+    }),
+  searchBusinesses(query: string, role: 'consignee' | 'buyer' | 'thirdParty'): Promise<Business[]> {
+    const key = { consignee: 'isConsignee', buyer: 'isBuyer', thirdParty: 'isThirdParty' } as const
+    return delay(
+      getDemoData().businesses.filter(
+        (party) => party[key[role]] && party.name.toLowerCase().includes(query.trim().toLowerCase())
+      )
+    )
+  },
   /**
    * Search Exporters by name or IEC
    */
@@ -42,9 +61,7 @@ export const partyMockService = {
   async searchConsignees(query: string): Promise<Business[]> {
     const { businesses } = getDemoData()
     const q = query.trim().toLowerCase()
-    const filtered = businesses.filter(
-      (item) => item.isConsignee && item.name.toLowerCase().includes(q)
-    )
+    const filtered = businesses.filter((item) => item.isConsignee && item.name.toLowerCase().includes(q))
     return delay(filtered)
   },
 
@@ -69,7 +86,10 @@ export const partyMockService = {
    */
   async getExporterById(exporterId: string): Promise<Exporter | undefined> {
     const { exporters } = getDemoData()
-    return delay(exporters.find((item) => String(item.id) === exporterId), 100)
+    return delay(
+      exporters.find((item) => String(item.id) === exporterId),
+      100
+    )
   },
 
   /**
@@ -77,7 +97,10 @@ export const partyMockService = {
    */
   async getConsigneeById(consigneeId: string): Promise<Business | undefined> {
     const { businesses } = getDemoData()
-    return delay(businesses.find((item) => String(item.id) === consigneeId), 100)
+    return delay(
+      businesses.find((item) => String(item.id) === consigneeId),
+      100
+    )
   },
 
   /**
@@ -97,9 +120,7 @@ export const partyMockService = {
    */
   async searchDestinationPorts(query: string): Promise<PortOption[]> {
     const q = query.trim().toLowerCase()
-    const filtered = ports.filter(
-      (port) => port.name.toLowerCase().includes(q) || port.code.toLowerCase().includes(q)
-    )
+    const filtered = ports.filter((port) => port.name.toLowerCase().includes(q) || port.code.toLowerCase().includes(q))
     return delay(filtered)
   },
 
@@ -107,6 +128,9 @@ export const partyMockService = {
    * Fetch Port by Code (used for label resolution)
    */
   async getPortByCode(code: string): Promise<PortOption | undefined> {
-    return delay(ports.find((port) => port.code === code), 100)
+    return delay(
+      [...loadingPorts, ...ports].find((port) => port.code === code),
+      100
+    )
   }
 }

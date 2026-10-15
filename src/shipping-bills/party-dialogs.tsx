@@ -1,5 +1,4 @@
-import { saveBranch, saveBusiness, saveExporter } from '@/shipping-bills/demo-store'
-import { Branch, Business, countries, Exporter } from '@/shipping-bills/model'
+import { Branch, Business, Exporter } from '@/shipping-bills/model'
 import { InferType, s, useForm } from 'core/form'
 import { Form, SubmitButton } from 'core/form/components'
 import { toast } from 'core/toast-manager'
@@ -9,6 +8,8 @@ import { Input } from 'ui/inputs/input'
 import { Select } from 'ui/inputs/select'
 import { Textarea } from 'ui/inputs/text-area'
 import { Dialog, DialogContent } from 'ui/interactive/dialog'
+import { partyMockService } from './party-mock-service'
+import { useReferenceData } from './reference-data-context'
 
 type Kind = 'exporter' | 'business'
 
@@ -45,6 +46,9 @@ interface PartyDialogProps {
 }
 
 export function PartyDialog({ kind, party, initialRole, onClose, onSaved }: PartyDialogProps) {
+  const {
+    data: { countries }
+  } = useReferenceData()
   const isNew = party == null
   const formCtx = useForm<PartyFields>(partySchema, {
     defaultValues: {
@@ -71,7 +75,7 @@ export function PartyDialog({ kind, party, initialRole, onClose, onSaved }: Part
   })
   const { register } = formCtx.hooks
 
-  function handleSave(values: PartyFields) {
+  async function handleSave(values: PartyFields) {
     const firstBranch = isNew
       ? {
           branchName: values.branchName!,
@@ -84,7 +88,7 @@ export function PartyDialog({ kind, party, initialRole, onClose, onSaved }: Part
       : undefined
     const saved =
       kind === 'exporter'
-        ? saveExporter({
+        ? await partyMockService.saveExporter({
             id: party?.id,
             name: values.name.trim(),
             iec: values.iec?.trim() ?? '',
@@ -97,7 +101,7 @@ export function PartyDialog({ kind, party, initialRole, onClose, onSaved }: Part
             notes: values.notes,
             firstBranch
           })
-        : saveBusiness({
+        : await partyMockService.saveBusiness({
             id: party?.id,
             name: values.name.trim(),
             iec: values.iec,
@@ -242,13 +246,16 @@ interface BranchDialogProps {
 }
 
 export function BranchDialog({ kind, ownerId, branch, onClose, onSaved }: BranchDialogProps) {
+  const {
+    data: { countries }
+  } = useReferenceData()
   const formCtx = useForm<BranchFields>(branchSchema, {
     defaultValues: branch ?? { branchName: '', address1: '', city: '', countryCode: kind === 'exporter' ? 'IN' : '' }
   })
   const { register } = formCtx.hooks
 
-  function handleSave(values: BranchFields) {
-    const saved = saveBranch(kind, ownerId, { ...values, id: branch?.id })
+  async function handleSave(values: BranchFields) {
+    const saved = await partyMockService.saveBranch(kind, ownerId, { ...values, id: branch?.id })
     toast.success('Branch saved')
     onSaved?.(saved)
     onClose()

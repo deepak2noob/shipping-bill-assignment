@@ -1,2 +1,4 @@
 pnpm-lock.yaml
-fe-zen-arch/icons/*
+fe-zen-arch/
+node_modules/
+dist/

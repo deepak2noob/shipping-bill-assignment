@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "lint": "bash fe-zen-arch/scripts/lint.sh --fix",
     "lint-check": "bash fe-zen-arch/scripts/lint.sh",
-    "postinstall": "node -e \"require('fs').mkdirSync('node_modules/.tmp', {recursive: true})\""
+    "postinstall": "node -e \"require('fs').mkdirSync('node_modules/.tmp', {recursive: true})\"",
+    "test": "node scripts/test.js",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "react": "^19.3.0",

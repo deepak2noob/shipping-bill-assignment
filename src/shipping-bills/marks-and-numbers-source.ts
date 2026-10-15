@@ -1,3 +1,4 @@
+import { mockRequest } from './mock-request'
 export interface MarksAndNumbersOption {
   value: string
   label: string
@@ -17,5 +18,8 @@ const marksByExporter: Record<string, MarksAndNumbersOption[]> = {
 }
 
 export function getMarksAndNumbersOptions(exporterId: string): Promise<MarksAndNumbersOption[]> {
-  return Promise.resolve(marksByExporter[exporterId] ?? [])
+  return mockRequest(
+    () => marksByExporter[exporterId] ?? [],
+    () => []
+  )
 }
